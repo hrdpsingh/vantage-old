@@ -3,9 +3,16 @@ from typing import Annotated
 
 import httpx2
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from github.dependencies import get_http_client
-from github.models import CommitHistory, CommitPatterns, Contributors, Overview, Topics
+from github.models import (
+    CommitActivity,
+    Contributors,
+    Languages,
+    Overview,
+    PunchCard,
+    Request,
+)
 from github.services import compute_percentages, format_date
 
 load_dotenv()
@@ -17,128 +24,98 @@ headers = {"Authorization": f"Bearer {GITHUB_PAT}"}
 
 @router.get("/repository/{username}/{repository}/overview", response_model=Overview)
 async def get_overview(
-    username: str,
-    repository: str,
     client: Annotated[httpx2.AsyncClient, Depends(get_http_client)],
+    request: Annotated[Request, Depends()],
 ):
-    print("checkpoint 1")
     response = await client.get(
-        url=f"https://api.github.com/repos/{username}/{repository}", headers=headers
+        url=f"https://api.github.com/repos/{request.username}/{request.repository}",
+        headers=headers,
     )
 
-    print("checkpoint 2")
-    remaining_header = response.headers.get("x-ratelimit-remaining")
-
-    print("checkpoint 3")
-    if response.status_code == status.HTTP_404_NOT_FOUND:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="The repository does not exist or is private.",
-        )
-
-    print("checkpoint 4")
     data = response.json()
 
-    print("checkpoint 5")
-
-    star_count = data["stargazers_count"]
-    last_update = format_date(data["updated_at"])
-    fork_count = data["forks_count"]
-    issues = data["open_issues"]
-    remaining_requests = int(remaining_header) if remaining_header is not None else None
-
-    print("checkpoint 6")
     return Overview(
-        star_count=star_count,
-        fork_count=fork_count,
-        issues=issues,
-        last_update=last_update,
-        remaining_requests=remaining_requests,
+        stars_count=data["stargazers_count"],
+        forks_count=data["forks_count"],
+        issues_count=data["open_issues_count"],
+        last_update=format_date(data["updated_at"]),
     )
 
 
 @router.get(
-    "/repository/{username}/{repository}/commit-history",
-    response_model=list[CommitHistory],
+    "/repository/{username}/{repository}/commit-activity",
+    response_model=list[CommitActivity],
 )
-async def get_commit_history(username: str, repository: str):
-    async with httpx2.AsyncClient() as client:
-        response = await client.get(
-            url=f"https://api.github.com/repos/{username}/{repository}/stats/commit_activity",
-            headers=headers,
+async def get_commit_activity(
+    client: Annotated[httpx2.AsyncClient, Depends(get_http_client)],
+    request: Annotated[Request, Depends()],
+):
+    response = await client.get(
+        url=f"https://api.github.com/repos/{request.username}/{request.repository}/stats/commit_activity",
+        headers=headers,
+    )
+
+    data = response.json()
+
+    return [
+        CommitActivity(
+            week_start_date=format_date(item["week"]), commits_count=item["days"]
         )
-
-        if response.status_code == status.HTTP_404_NOT_FOUND:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="The repository does not exist or is private.",
-            )
-
-        data = response.json()
-
-        for item in data:
-            if "week" in item:
-                item["week"] = format_date(item["week"])
-
-        return data
+        for item in data
+    ]
 
 
 @router.get(
     "/repository/{username}/{repository}/contributors",
     response_model=list[Contributors],
 )
-async def get_contributors(username: str, repository: str):
-    async with httpx2.AsyncClient() as client:
-        response = await client.get(
-            url=f"https://api.github.com/repos/{username}/{repository}/stats/contributors",
-            headers=headers,
-            timeout=None,
-        )
+async def get_contributors(
+    client: Annotated[httpx2.AsyncClient, Depends(get_http_client)],
+    request: Annotated[Request, Depends()],
+):
+    response = await client.get(
+        url=f"https://api.github.com/repos/{request.username}/{request.repository}/stats/contributors",
+        headers=headers,
+        timeout=30,
+    )
 
-        data = response.json()
-        return data
+    data = response.json()
+    return data
 
 
 @router.get(
-    "/repository/{username}/{repository}/commit-patterns",
-    response_model=CommitPatterns,
+    "/repository/{username}/{repository}/punch-card",
+    response_model=list[PunchCard],
 )
-async def get_commit_patterns(username: str, repository: str):
-    async with httpx2.AsyncClient() as client:
-        response = await client.get(
-            url=f"https://api.github.com/repos/{username}/{repository}/stats/punch_card",
-            headers=headers,
-        )
+async def get_punch_card(
+    client: Annotated[httpx2.AsyncClient, Depends(get_http_client)],
+    request: Annotated[Request, Depends()],
+):
+    response = await client.get(
+        url=f"https://api.github.com/repos/{request.username}/{request.repository}/stats/punch_card",
+        headers=headers,
+    )
 
-        data = response.json()
-        return data
+    data = response.json()
+
+    keys = ["day", "hour", "commits_count"]
+    result = [dict(zip(keys, item)) for item in data]
+
+    return result
 
 
 @router.get(
     "/repository/{username}/{repository}/languages",
-    response_model=dict[str, float],
+    response_model=Languages,
 )
-async def get_languages(username: str, repository: str):
-    async with httpx2.AsyncClient() as client:
-        response = await client.get(
-            url=f"https://api.github.com/repos/{username}/{repository}/languages",
-            headers=headers,
-        )
+async def get_languages(
+    client: Annotated[httpx2.AsyncClient, Depends(get_http_client)],
+    request: Annotated[Request, Depends()],
+):
+    response = await client.get(
+        url=f"https://api.github.com/repos/{request.username}/{request.repository}/languages",
+        headers=headers,
+    )
 
-        data = compute_percentages(response.json())
-        return data
-
-
-@router.get(
-    "/repository/{username}/{repository}/topics",
-    response_model=Topics,
-)
-async def get_topics(username: str, repository: str):
-    async with httpx2.AsyncClient() as client:
-        response = await client.get(
-            url=f"https://api.github.com/repos/{username}/{repository}/topics",
-            headers=headers,
-        )
-
-        data = response.json()
-        return data
+    data = compute_percentages(response.json())
+    return data

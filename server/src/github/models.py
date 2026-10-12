@@ -1,41 +1,38 @@
-from typing import Annotated
+from pydantic import BaseModel, HttpUrl, RootModel
 
-from pydantic import BaseModel, Field, HttpUrl, RootModel
+
+class Request(BaseModel):
+    username: str
+    repository: str
 
 
 class Overview(BaseModel):
-    star_count: int
-    fork_count: int
-    issues: int
+    stars_count: int
+    forks_count: int
+    issues_count: int
     last_update: str
-    remaining_requests: int | None
 
 
-class CommitHistory(BaseModel):
-    week: str
-    total: int
+class CommitActivity(BaseModel):
+    week_start_date: str
+    commits_count: list[int]
 
 
 class Author(BaseModel):
-    login: str
+    username: str
     avatar_url: HttpUrl
 
 
 class Contributors(BaseModel):
-    total: int
+    commits_count: int
     author: Author | None
 
 
-CommitData = tuple[
-    Annotated[int, Field(ge=0, le=6)],
-    Annotated[int, Field(ge=0, le=23)],
-    Annotated[int, Field(ge=0)],
-]
+class PunchCard(BaseModel):
+    day: int
+    hour: int
+    commits_count: int
 
 
-class CommitPatterns(RootModel[list[CommitData]]):
+class Languages(RootModel[dict[str, float]]):
     pass
-
-
-class Topics(BaseModel):
-    names: list[str]

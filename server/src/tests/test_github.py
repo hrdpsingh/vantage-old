@@ -1,13 +1,24 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
+from github.dependencies import get_http_client
 from github.models import Contributors
 from main import app
 from pydantic import ValidationError
 
 client = TestClient(app)
+
+
+@pytest.fixture
+def get_mock_client():
+    app.dependency_overrides[get_http_client] = get_mock_client
+
+    mock_response = MagicMock()
+    mock_client = MagicMock()
+    mock_client.get = AsyncMock(return_value=mock_response)
 
 
 @patch("github.router.httpx2.AsyncClient.get")
