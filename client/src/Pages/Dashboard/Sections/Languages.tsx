@@ -1,7 +1,7 @@
 import { Pie, PieChart, ResponsiveContainer } from "recharts";
-import { useFetch } from "../hooks/useFetch";
+import { useFetch } from "../../../hooks/useFetch";
 import { ClipLoader } from "react-spinners";
-import type { Details } from "../types/repository";
+import type { Details } from "../../../types/repository";
 
 interface Languages {
   language: number;

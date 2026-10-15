@@ -11,6 +11,7 @@ class Overview(BaseModel):
     forks_count: int
     issues_count: int
     last_update: str
+    topics: list[str]
 
 
 class CommitActivity(BaseModel):

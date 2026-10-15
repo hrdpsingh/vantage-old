@@ -1,6 +1,6 @@
 import ClipLoader from "react-spinners/ClipLoader";
-import { useFetch } from "../hooks/useFetch";
-import type { Details } from "../types/repository";
+import { useFetch } from "../../../hooks/useFetch";
+import type { Details } from "../../../types/repository";
 
 type CommitPatternsItem = [number, number, number];
 
@@ -18,7 +18,7 @@ function normalizeMatrix(matrix: number[][]): number[][] {
   );
 }
 
-export function Heatmap({ username, repository }: Details) {
+export function PunchCard({ username, repository }: Details) {
   const url = `http://127.0.0.1:8000/repository/${username}/${repository}/commit-patterns`;
   const data = useFetch<CommitPatternsItem[]>(username, repository, url);
 

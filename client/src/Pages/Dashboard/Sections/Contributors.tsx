@@ -1,6 +1,6 @@
 import ClipLoader from "react-spinners/ClipLoader";
-import { useFetch } from "../hooks/useFetch";
-import type { Details } from "../types/repository";
+import { useFetch } from "../../../hooks/useFetch";
+import type { Details } from "../../../types/repository";
 
 interface User {
   total: number;

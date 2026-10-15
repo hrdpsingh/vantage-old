@@ -1,10 +1,9 @@
-import { CommitGraph } from "../../Components/CommitGraph";
+import { CommitActivity } from "./Sections/CommitActivity";
 import { useLocation } from "react-router-dom";
-import { Contributors } from "../../Components/Contributors";
-import { Heatmap } from "../../Components/Heatmap";
-import { Overview } from "../../Components/Overview";
-import { Languages } from "../../Components/Languages";
-import { Topics } from "../../Components/Topics";
+import { Contributors } from "./Sections/Contributors";
+import { PunchCard } from "./Sections/PunchCard";
+import { Overview } from "./Sections/Overview";
+import { Languages } from "./Sections/Languages";
 
 export function Dashboard() {
   const location = useLocation();
@@ -14,11 +13,13 @@ export function Dashboard() {
   return (
     <main className="p-4 bg-blue-100 min-h-screen gap-8">
       <Overview username={username} repository={repository}></Overview>
-      <CommitGraph username={username} repository={repository}></CommitGraph>
+      <CommitActivity
+        username={username}
+        repository={repository}
+      ></CommitActivity>
       <Contributors username={username} repository={repository}></Contributors>
-      <Heatmap username={username} repository={repository}></Heatmap>
+      <PunchCard username={username} repository={repository}></PunchCard>
       <Languages username={username} repository={repository}></Languages>
-      <Topics username={username} repository={repository}></Topics>
     </main>
   );
 }

@@ -39,6 +39,7 @@ async def get_overview(
         forks_count=data["forks_count"],
         issues_count=data["open_issues_count"],
         last_update=format_date(data["updated_at"]),
+        topics=data["topics"],
     )
 
 
